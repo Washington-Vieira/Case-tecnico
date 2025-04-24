@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    container_name: systock-db
+    restart: always
+    environment:
+      POSTGRES_USER: systock
+      POSTGRES_PASSWORD: systock123
+      POSTGRES_DB: systock
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d # Monta a pasta onde estão os scripts SQL
+    networks:
+      - systock-net
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: systock-pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@systock.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    networks:
+      - systock-net
+
+  app:
+    build:
+      context: ./app
+    container_name: systock-app
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: systock
+      DB_USER: systock
+      DB_PASSWORD: systock123
+    depends_on:
+      - db
+    networks:
+      - systock-net
+    ports:
+      - "8501:8501" # Porta para o Streamlit
+
+volumes:
+  pgdata:
+
+networks:
+  systock-net:
